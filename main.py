@@ -14,9 +14,7 @@ from wtforms import SubmitField, StringField
 from wtforms.fields.simple import PasswordField
 
 # Import your forms from the forms.py
-from forms import CreatePostForm, LoginForm
-
-
+from forms import CreatePostForm, LoginForm, UserForm
 
 '''
 Make sure the required packages are installed: 
@@ -78,7 +76,7 @@ class User(UserMixin, db.Model):
 #     name= StringField("Name")
 #     password= PasswordField("Password")
 #     submit = SubmitField("Register now")
-#
+# #
 # class LoginForm(FlaskForm):
 #     email = StringField("Email")
 #     password = PasswordField("Password")
@@ -88,6 +86,17 @@ class User(UserMixin, db.Model):
 
 with app.app_context():
     db.create_all()
+
+#Create admin-only decorator
+def admin_only(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        #If id is not 1 then return abort with 403 error
+        if current_user.id != 1:
+            return abort(403)
+        #Otherwise continue with the route function
+        return f(*args, **kwargs)
+    return decorated_function
 
 
 @login_manager.user_loader
@@ -99,7 +108,7 @@ def load_user(user_id):
 @app.route('/register', methods=["GET", "POST"])
 def register():
 
-    form = CreatePostForm()
+    form = UserForm()
 
     if form.validate_on_submit():
         user = User.query.filter_by(email=request.form["email"]).first()
@@ -118,8 +127,9 @@ def register():
 
             login_user(new_user)
 
-            return render_template("index.html")
+            return redirect(url_for('get_all_posts'))
     return render_template("register.html", form=form)
+
 
 # TODO: Retrieve a user from the database based on their email. 
 @app.route('/login', methods=["GET", "POST"])
@@ -140,7 +150,12 @@ def login():
             return redirect(url_for("login"))
 
         login_user(user)
+
+
+
         return redirect(url_for('get_all_posts'))
+
+
 
     return render_template("login.html", form=form)
 
@@ -155,7 +170,13 @@ def logout():
 def get_all_posts():
     result = db.session.execute(db.select(BlogPost))
     posts = result.scalars().all()
-    return render_template("index.html", all_posts=posts)
+
+    if not current_user.is_authenticated:
+        return render_template("index.html", all_posts=posts)
+
+    else:
+        user_id = current_user.id
+        return render_template("index.html", all_posts=posts, user_id=user_id)
 
 
 # TODO: Allow logged-in users to comment on posts
@@ -165,10 +186,9 @@ def show_post(post_id):
     return render_template("post.html", post=requested_post)
 
 
-
-
 # TODO: Use a decorator so only an admin user can create a new post
 @app.route("/new-post", methods=["GET", "POST"])
+@admin_only
 def add_new_post():
     form = CreatePostForm()
     if form.validate_on_submit():
@@ -210,6 +230,7 @@ def edit_post(post_id):
 
 # TODO: Use a decorator so only an admin user can delete a post
 @app.route("/delete/<int:post_id>")
+@admin_only
 def delete_post(post_id):
     post_to_delete = db.get_or_404(BlogPost, post_id)
     db.session.delete(post_to_delete)
@@ -229,4 +250,3 @@ def contact():
 
 if __name__ == "__main__":
     app.run(debug=True, port=5002)
-
