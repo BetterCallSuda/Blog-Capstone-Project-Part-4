@@ -230,6 +230,3 @@ def contact():
 if __name__ == "__main__":
     app.run(debug=True, port=5002)
 
-def logout():
-    logout_user()
-    return redirect(url_for('get_all_posts'))
