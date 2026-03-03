@@ -65,3 +65,32 @@ class BlogPost(db.Model):
     img_url: Mapped[str] = mapped_column(String(250), nullable=False)
 
 
+# TODO: Create a User table for all your registered users.
+class User(UserMixin, db.Model):
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    email: Mapped[str] = mapped_column(String(100), unique=True)
+    password: Mapped[str] = mapped_column(String(100))
+    name: Mapped[str] = mapped_column(String(1000))
+
+# class UserForm(FlaskForm):
+#
+#     email = StringField("Email")
+#     name= StringField("Name")
+#     password= PasswordField("Password")
+#     submit = SubmitField("Register now")
+#
+# class LoginForm(FlaskForm):
+#     email = StringField("Email")
+#     password = PasswordField("Password")
+#     submit = SubmitField("Login")
+
+
+
+with app.app_context():
+    db.create_all()
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
