@@ -121,4 +121,33 @@ def register():
             return render_template("index.html")
     return render_template("register.html", form=form)
 
+# TODO: Retrieve a user from the database based on their email. 
+@app.route('/login', methods=["GET", "POST"])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+
+        user = User.query.filter_by(
+            email=form.email.data
+        ).first()
+
+        if not user:
+            flash("User does not exist")
+            return redirect(url_for("login"))
+
+        if not check_password_hash(user.password, form.password.data):
+            flash("Wrong password")
+            return redirect(url_for("login"))
+
+        login_user(user)
+        return redirect(url_for('get_all_posts'))
+
+    return render_template("login.html", form=form)
+
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    return redirect(url_for('get_all_posts'))
+
 
