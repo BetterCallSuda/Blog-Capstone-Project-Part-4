@@ -16,3 +16,52 @@ from wtforms.fields.simple import PasswordField
 # Import your forms from the forms.py
 from forms import CreatePostForm, LoginForm
 
+
+
+'''
+Make sure the required packages are installed: 
+Open the Terminal in PyCharm (bottom left). 
+
+On Windows type:
+python -m pip install -r requirements.txt
+
+On MacOS type:
+pip3 install -r requirements.txt
+
+This will install the packages from the requirements.txt for this project.
+'''
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
+ckeditor = CKEditor(app)
+Bootstrap5(app)
+
+# TODO: Configure Flask-Login
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+login_manager.login_view = "login"
+
+
+# CREATE DATABASE
+class Base(DeclarativeBase):
+    pass
+
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///posts.db'
+db = SQLAlchemy(model_class=Base)
+db.init_app(app)
+
+
+
+# CONFIGURE TABLES
+class BlogPost(db.Model):
+    __tablename__ = "blog_posts"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(250), unique=True, nullable=False)
+    subtitle: Mapped[str] = mapped_column(String(250), nullable=False)
+    date: Mapped[str] = mapped_column(String(250), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    author: Mapped[str] = mapped_column(String(250), nullable=False)
+    img_url: Mapped[str] = mapped_column(String(250), nullable=False)
+
+
